@@ -17,7 +17,8 @@ export default function PasteDisplay({ id }: { id: string }) {
   useEffect(() => {
     const fetchPaste = async () => {
       try {
-        const response = await fetch(`/api/pastes/${id}`);
+        // Use /view endpoint which doesn't increment views
+        const response = await fetch(`/api/pastes/${id}/view`);
 
         if (!response.ok) {
           const data = await response.json();
@@ -157,7 +158,7 @@ export default function PasteDisplay({ id }: { id: string }) {
             <strong>Share this link:</strong> Paste the URL in your browser address bar to share it with others.
             {paste.remaining_views !== null && (
               <span className="block mt-2 text-indigo-700 font-semibold">
-                ✨ This paste can be viewed <strong>{paste.remaining_views + 1}</strong> more time{paste.remaining_views !== 0 ? 's' : ''}.
+                ✨ This paste can be viewed <strong>{paste.remaining_views}</strong> more time{paste.remaining_views !== 1 ? 's' : ''}.
               </span>
             )}
           </span>

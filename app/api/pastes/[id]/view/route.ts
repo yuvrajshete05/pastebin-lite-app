@@ -25,7 +25,7 @@ export async function GET(
       }
     }
 
-    // Fetch paste
+    // Fetch paste WITHOUT incrementing views
     const { data, error } = await supabase
       .from('pastes')
       .select('*')
@@ -53,7 +53,7 @@ export async function GET(
       }
     }
 
-    // Check if view limit exceeded
+    // Check if view limit exceeded BEFORE incrementing
     if (data.max_views && data.views_count >= data.max_views) {
       return NextResponse.json(
         { error: 'View limit exceeded' },
@@ -61,7 +61,7 @@ export async function GET(
       );
     }
 
-    // Increment view count first
+    // Increment view count
     const { error: updateError } = await supabase
       .from('pastes')
       .update({ views_count: data.views_count + 1 })
@@ -73,7 +73,6 @@ export async function GET(
 
     // Calculate remaining views AFTER incrementing
     let remaining_views = null;
-
     if (data.max_views !== null) {
       remaining_views = Math.max(0, data.max_views - (data.views_count + 1));
     }

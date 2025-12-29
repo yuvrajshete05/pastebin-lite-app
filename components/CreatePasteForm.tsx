@@ -85,6 +85,9 @@ export default function CreatePasteForm() {
     }
   };
 
+  const charCount = content.length;
+  const charLimit = 10000;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
@@ -97,7 +100,7 @@ export default function CreatePasteForm() {
           onChange={(e) => setContent(e.target.value)}
           placeholder="Enter your text here... (code, notes, etc.)"
           rows={8}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition hover:border-gray-400"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition hover:border-gray-400 text-gray-900 bg-white"
           disabled={loading}
         />
         <p className="text-xs text-gray-500 mt-2">
@@ -117,7 +120,7 @@ export default function CreatePasteForm() {
             onChange={(e) => setTtlSeconds(e.target.value)}
             placeholder="e.g., 3600 (1 hour)"
             min="1"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition hover:border-gray-400 text-gray-900 bg-white"
             disabled={loading}
           />
           <p className="text-xs text-gray-500 mt-2">
@@ -136,7 +139,7 @@ export default function CreatePasteForm() {
             onChange={(e) => setMaxViews(e.target.value)}
             placeholder="e.g., 5"
             min="1"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition hover:border-gray-400 text-gray-900 bg-white"
             disabled={loading}
           />
           <p className="text-xs text-gray-500 mt-2">
