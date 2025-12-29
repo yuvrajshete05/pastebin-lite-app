@@ -10,27 +10,30 @@ A simple, fast, and secure text sharing application built with Next.js. Create p
 - 👀 **View Limits** - Control how many times a paste can be viewed
 - 🔗 **Shareable Links** - Get unique URLs for each paste
 - 🚀 **Fast & Reliable** - Built on Next.js with persistent storage
+- 🌐 **Fully Deployed** - Ready for production on Vercel
+- 💾 **Persistent Storage** - Data stored in Supabase
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16+ (React, TypeScript, Tailwind CSS)
-- **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Supabase
-- **Persistence**: Supabase (survives across requests)
+- **Backend**: Next.js API Routes (serverless)
+- **Database**: Supabase (managed cloud database)
+- **Persistence**: Supabase ensures data survives across requests
 - **ID Generation**: nanoid
+- **Deployment**: Vercel
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account (free tier available at https://supabase.com)
+- Supabase account (free tier at https://supabase.com)
 
 ### Setup Instructions
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/yuvrajshete05/pastebin-lite-app.git
    cd pastebin-lite
    ```
 
@@ -39,27 +42,41 @@ A simple, fast, and secure text sharing application built with Next.js. Create p
    npm install
    ```
 
-3. **Create Supabase Database Schema**
-   - Go to your Supabase project dashboard
-   - Navigate to **SQL Editor**
-   - Create a new query and run the SQL from `database.sql`
-   - This creates the `pastes` table with proper indexes
+3. **Create Supabase Database**
+   - Go to https://supabase.com and create a new project
+   - In your project, go to **SQL Editor**
+   - Create a new query and paste the SQL from `database.sql`:
+   ```sql
+   CREATE TABLE pastes (
+     id TEXT PRIMARY KEY,
+     content TEXT NOT NULL,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+     ttl_seconds INTEGER,
+     max_views INTEGER,
+     views_count INTEGER DEFAULT 0
+   );
+   
+   CREATE INDEX idx_pastes_created_at ON pastes(created_at);
+   CREATE INDEX idx_pastes_id ON pastes(id);
+   ```
+   - Run the query to create the table
 
 4. **Configure Environment Variables**
-   - Copy `.env.local` and add your Supabase credentials:
+   - Create or update `.env.local` with your Supabase credentials:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    NEXT_PUBLIC_APP_URL=http://localhost:3000
-   TEST_MODE=0  # Set to 1 for deterministic test mode
+   TEST_MODE=0
    ```
-   - Get your credentials from Supabase → Settings → API
+   - Get credentials from Supabase Dashboard → Settings → API → Project URL and Anon Key
 
-5. **Run the Development Server**
+5. **Run Development Server**
    ```bash
    npm run dev
    ```
    - Open http://localhost:3000 in your browser
+   - Create a paste and view it via the shareable link
 
 6. **Build for Production**
    ```bash
@@ -119,38 +136,74 @@ GET /p/:id
 ```
 Returns HTML page displaying the paste content. Returns 404 if unavailable.
 
-## Persistence Layer
+## Persistence Layer: Supabase
 
-**Supabase PostgreSQL Database**
+**Why Supabase?**
 
-The application uses Supabase's managed PostgreSQL database to store all pastes. This ensures:
+The application uses **Supabase** (a managed cloud database platform) for persistent storage. This is critical because:
 
-- ✅ Data persists across requests (critical for serverless platforms like Vercel)
-- ✅ Automatic backups and disaster recovery
-- ✅ Real-time capabilities with Supabase
-- ✅ Free tier with 500MB storage
-- ✅ Row-level security (RLS) for data protection
+- ✅ **Serverless-Compatible** - Vercel is serverless; in-memory storage gets wiped on each request. Supabase persists data permanently.
+- ✅ **No Infrastructure** - Fully managed, no databases to run yourself
+- ✅ **Free Tier** - 500MB storage and 2GB bandwidth included
+- ✅ **Real-time Capabilities** - Optional live updates
+- ✅ **Automatic Backups** - Your data is always safe
+- ✅ **Easy Setup** - No complex migrations
 
-**Database Schema:**
-```sql
-CREATE TABLE pastes (
-  id TEXT PRIMARY KEY,
-  content TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  ttl_seconds INTEGER,
-  max_views INTEGER,
-  views_count INTEGER DEFAULT 0
-);
+**Database Structure:**
 ```
+Table: pastes
+├── id (TEXT, PRIMARY KEY) - Unique paste identifier
+├── content (TEXT) - The paste text content
+├── created_at (TIMESTAMP) - When the paste was created
+├── ttl_seconds (INTEGER, nullable) - Time-to-live in seconds
+├── max_views (INTEGER, nullable) - Maximum number of views allowed
+└── views_count (INTEGER) - Current number of views
+```
+
+**How It Works:**
+1. When you create a paste, the content is saved to Supabase
+2. Each time someone views the paste, Supabase increments the view counter
+3. On fetch, we check TTL and view limits against Supabase data
+4. When constraints are met, Supabase returns 404 (unavailable)
+5. All data persists across Vercel deployments and request cycles
 
 ## Design Decisions
 
-1. **Nanoid for ID Generation** - Short, URL-safe, collision-resistant unique IDs
-2. **Supabase for Persistence** - Serverless-friendly, no connection pooling needed, free tier sufficient
-3. **View Counting on Fetch** - Each API fetch increments views; simple, no background jobs needed
-4. **Expiry Check on Fetch** - Lazily check expiry when paste is accessed (no scheduled cleanup)
-5. **Combined Constraints** - If both TTL and max_views are set, whichever triggers first unavails the paste
-6. **Test Mode Support** - `x-test-now-ms` header allows deterministic testing without time delays
+1. **Nanoid for ID Generation**
+   - Short, URL-safe, collision-resistant unique IDs
+   - Examples: `XT85fZWbDS`, `nZpJ9bqsY3`
+   - Better than UUIDs for URLs
+
+2. **Supabase for Persistence**
+   - Only persistence solution that survives serverless request cycles
+   - Free tier sufficient for this use case
+   - Built-in real-time and backup capabilities
+   - No connection pooling headaches
+
+3. **Separate /view Endpoint**
+   - `/api/pastes/:id/view` endpoint for incrementing views
+   - Prevents double-counting on initial page load
+   - Clean separation: GET /p/:id (no increment), GET /api/pastes/:id/view (increment)
+
+4. **Lazy Expiry Check**
+   - Check TTL/view limits only when paste is accessed
+   - No background jobs or scheduled cleanups needed
+   - Data stays in database (archived)
+
+5. **Combined Constraints**
+   - If both TTL and max_views are set, whichever triggers first makes paste unavailable
+   - Logic: `if expired OR views_exceeded THEN return 404`
+
+6. **Test Mode Support**
+   - `x-test-now-ms` header for deterministic testing
+   - Allows testing expiry without waiting
+   - Set `TEST_MODE=1` environment variable
+
+7. **Tailwind CSS Styling**
+   - Dark gradient theme with animated blobs
+   - Clean, modern UI with good contrast
+   - Responsive design (mobile-friendly)
+   - White form inputs with dark text for visibility
 
 ## Constraints on a Paste
 
@@ -192,57 +245,70 @@ curl -H "x-test-now-ms: 1704067200000" http://localhost:3000/api/pastes/abc123
    - Fetch before 60s: 200 OK
    - Fetch after 60s: 404 Not Found
 
-## Deployment
+## Deployment on Vercel
 
-### Deploy to Vercel
+### Step-by-Step Deployment
 
-1. Push to GitHub
-2. Connect your GitHub repo to Vercel
-3. Add environment variables in Vercel dashboard:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `NEXT_PUBLIC_APP_URL` (your Vercel domain)
-4. Deploy
+1. **Push to GitHub**
+   ```bash
+   git push origin main
+   ```
 
-Vercel will automatically build and deploy your app. Data persists in Supabase.
+2. **Connect to Vercel**
+   - Go to https://vercel.com
+   - Click "New Project"
+   - Import your GitHub repository
+   - Select your repository
 
-## Troubleshooting
+3. **Add Environment Variables**
+   - In Vercel dashboard, go to Settings → Environment Variables
+   - Add these variables:
+     - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
+     - `NEXT_PUBLIC_APP_URL` - Your Vercel domain (e.g., https://your-app.vercel.app)
+   - Do NOT add `TEST_MODE` (defaults to 0)
 
-**"Cannot access database" error:**
-- Verify Supabase credentials in `.env.local`
-- Check that the `pastes` table exists in Supabase
-- Ensure Data API is enabled in Supabase settings
+4. **Deploy**
+   - Click "Deploy"
+   - Wait for the build to complete
+   - Your app is now live!
 
-**"params is a Promise" error:**
-- This is expected in Next.js 16+. Routes use async params.
-- Already handled in the code.
+5. **Test Your Deployment**
+   - Visit https://your-app.vercel.app
+   - Create a paste
+   - Share the link and verify it works
+   - Check `/api/healthz` returns `{"ok": true}`
 
-**Paste not found after creation:**
-- Check browser DevTools → Network tab
-- Verify the API returned a valid ID
-- Ensure Supabase credentials are correct
+**Important:** The environment variables must be added to Vercel BEFORE deployment, or the app will fail with "Cannot access Supabase".
 
-## License
 
-MIT
+---
 
-## Support
+## Project Structure
 
-For issues or questions, please open a GitHub issue.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+pastebin-lite/
+├── app/
+│   ├── api/
+│   │   ├── healthz/
+│   │   │   └── route.ts           # Health check endpoint
+│   │   └── pastes/
+│   │       ├── route.ts           # POST to create paste
+│   │       └── [id]/
+│   │           ├── route.ts       # GET to fetch paste
+│   │           └── view/
+│   │               └── route.ts   # GET to view + count
+│   ├── p/
+│   │   └── [id]/
+│   │       └── page.tsx           # HTML page display
+│   └── page.tsx                   # Home page
+├── components/
+│   ├── CreatePasteForm.tsx        # Form UI
+│   └── PasteDisplay.tsx           # Display + metadata
+├── lib/
+│   ├── supabase.ts                # Supabase client
+│   └── db.ts                      # Database helpers
+├── .env.local                     # Env vars (local only)
+├── database.sql                   # DB schema
+└── README.md
+```
