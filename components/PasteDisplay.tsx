@@ -49,76 +49,118 @@ export default function PasteDisplay({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <p className="text-gray-600">Loading paste...</p>
+      <div className="flex flex-col justify-center items-center py-16 space-y-4">
+        <div className="text-6xl animate-bounce">📄</div>
+        <p className="text-gray-600 font-semibold">Loading paste...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        <h2 className="text-lg font-semibold mb-2">Error</h2>
-        <p>{error}</p>
+      <div className="p-6 bg-red-50 border-2 border-red-200 text-red-700 rounded-lg">
+        <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+          <span className="text-2xl">❌</span> Error
+        </h2>
+        <p className="text-red-600">{error}</p>
       </div>
     );
   }
 
   if (!paste) {
     return (
-      <div className="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-        <h2 className="text-lg font-semibold mb-2">Paste Not Found</h2>
-        <p>The paste you're looking for doesn't exist or has expired.</p>
+      <div className="p-6 bg-yellow-50 border-2 border-yellow-200 text-yellow-700 rounded-lg">
+        <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+          <span className="text-2xl">⚠️</span> Paste Not Found
+        </h2>
+        <p className="text-yellow-600">
+          The paste you're looking for doesn't exist, has expired, or the view limit has been exceeded.
+        </p>
       </div>
     );
   }
 
   const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleString();
+    const date = new Date(isoString);
+    return date.toLocaleString();
+  };
+
+  const getTimeUntilExpiry = (isoString: string) => {
+    const now = new Date();
+    const expiry = new Date(isoString);
+    const diff = expiry.getTime() - now.getTime();
+    
+    if (diff < 0) return 'Expired';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) return `${hours}h ${minutes}m left`;
+    return `${minutes}m left`;
   };
 
   return (
-    <div className="space-y-4">
-      <div className="bg-gray-100 p-4 rounded-md border border-gray-300">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Paste Content</h2>
+    <div className="space-y-6">
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-lg border border-gray-300 shadow-md">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <span className="text-2xl">📝</span> Paste Content
+          </h2>
           <button
             onClick={copyToClipboard}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition transform hover:scale-105 active:scale-95 ${
+              copied
+                ? 'bg-green-500 text-white'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? '✅ Copied!' : '📋 Copy'}
           </button>
         </div>
-        <pre className="whitespace-pre-wrap break-words text-gray-700 bg-white p-4 rounded border border-gray-200 overflow-auto max-h-96">
+        <pre className="whitespace-pre-wrap break-words text-gray-800 bg-white p-4 rounded-lg border border-gray-200 overflow-auto max-h-64 font-mono text-sm leading-relaxed">
           {paste.content}
         </pre>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {paste.remaining_views !== null && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-sm text-gray-600">Remaining Views</p>
-            <p className="text-2xl font-bold text-blue-600">{paste.remaining_views}</p>
+          <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg shadow-sm hover:shadow-md transition">
+            <p className="text-sm text-blue-600 font-semibold flex items-center gap-2 mb-2">
+              <span className="text-xl">👀</span> Remaining Views
+            </p>
+            <p className="text-3xl font-bold text-blue-700">{paste.remaining_views}</p>
+            {paste.remaining_views === 0 && (
+              <p className="text-xs text-red-600 mt-1 font-semibold">Last view!</p>
+            )}
           </div>
         )}
 
         {paste.expires_at && (
-          <div className="p-4 bg-purple-50 border border-purple-200 rounded">
-            <p className="text-sm text-gray-600">Expires At</p>
-            <p className="text-sm font-semibold text-purple-600">
+          <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg shadow-sm hover:shadow-md transition">
+            <p className="text-sm text-purple-600 font-semibold flex items-center gap-2 mb-2">
+              <span className="text-xl">⏰</span> Expires At
+            </p>
+            <p className="text-sm font-semibold text-purple-700">
               {formatDate(paste.expires_at)}
+            </p>
+            <p className="text-xs text-purple-600 mt-2">
+              {getTimeUntilExpiry(paste.expires_at)}
             </p>
           </div>
         )}
       </div>
 
-      <div className="p-4 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
-        <p>
-          💡 <strong>Tip:</strong> Share the URL in your browser to let others view this paste.
-          {paste.remaining_views !== null &&
-            ` This paste can be viewed ${paste.remaining_views} more time${
-              paste.remaining_views !== 1 ? 's' : ''
-            }.`}
+      <div className="p-5 bg-gradient-to-r from-indigo-50 to-blue-50 border-l-4 border-indigo-500 rounded-lg">
+        <p className="text-sm text-gray-700 flex items-start gap-3">
+          <span className="text-xl mt-0.5">💡</span>
+          <span>
+            <strong>Share this link:</strong> Paste the URL in your browser address bar to share it with others.
+            {paste.remaining_views !== null && (
+              <span className="block mt-2 text-indigo-700 font-semibold">
+                ✨ This paste can be viewed <strong>{paste.remaining_views + 1}</strong> more time{paste.remaining_views !== 0 ? 's' : ''}.
+              </span>
+            )}
+          </span>
         </p>
       </div>
     </div>

@@ -68,7 +68,7 @@ export default function CreatePasteForm() {
         return;
       }
 
-      setSuccess(`Paste created successfully!`);
+      setSuccess(`✨ Paste created! Redirecting...`);
       setContent('');
       setTtlSeconds('');
       setMaxViews('');
@@ -86,26 +86,29 @@ export default function CreatePasteForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="content" className="block text-sm font-medium text-gray-700">
-          Paste Content *
+        <label htmlFor="content" className="block text-sm font-semibold text-gray-700 mb-2">
+          Paste Content <span className="text-red-500">*</span>
         </label>
         <textarea
           id="content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Enter your text here..."
-          rows={10}
-          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Enter your text here... (code, notes, etc.)"
+          rows={8}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition hover:border-gray-400"
           disabled={loading}
         />
+        <p className="text-xs text-gray-500 mt-2">
+          {content.length} characters
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label htmlFor="ttl" className="block text-sm font-medium text-gray-700">
-            TTL (seconds) - Optional
+          <label htmlFor="ttl" className="block text-sm font-semibold text-gray-700 mb-2">
+            ⏰ TTL (seconds) - Optional
           </label>
           <input
             id="ttl"
@@ -114,17 +117,17 @@ export default function CreatePasteForm() {
             onChange={(e) => setTtlSeconds(e.target.value)}
             placeholder="e.g., 3600 (1 hour)"
             min="1"
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition hover:border-gray-400"
             disabled={loading}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            How long until paste expires (in seconds)
+          <p className="text-xs text-gray-500 mt-2">
+            Paste expires after this many seconds
           </p>
         </div>
 
         <div>
-          <label htmlFor="maxViews" className="block text-sm font-medium text-gray-700">
-            Max Views - Optional
+          <label htmlFor="maxViews" className="block text-sm font-semibold text-gray-700 mb-2">
+            👀 Max Views - Optional
           </label>
           <input
             id="maxViews"
@@ -133,33 +136,48 @@ export default function CreatePasteForm() {
             onChange={(e) => setMaxViews(e.target.value)}
             placeholder="e.g., 5"
             min="1"
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition hover:border-gray-400"
             disabled={loading}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            How many times the paste can be viewed
+          <p className="text-xs text-gray-500 mt-2">
+            Paste becomes unavailable after this many views
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-3 animate-pulse">
+          <span className="text-xl">⚠️</span>
+          <div>
+            <p className="font-semibold">Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
         </div>
       )}
 
       {success && (
-        <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-          {success}
+        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-start gap-3 animate-pulse">
+          <span className="text-xl">✅</span>
+          <p className="font-semibold">{success}</p>
         </div>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+        className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
       >
-        {loading ? 'Creating...' : 'Create Paste'}
+        {loading ? (
+          <>
+            <span className="inline-block animate-spin">⏳</span>
+            Creating Paste...
+          </>
+        ) : (
+          <>
+            <span>✨</span>
+            Create Paste
+          </>
+        )}
       </button>
     </form>
   );

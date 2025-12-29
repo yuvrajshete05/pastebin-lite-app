@@ -61,7 +61,7 @@ export async function GET(
       );
     }
 
-    // Increment view count
+    // Increment view count first
     const { error: updateError } = await supabase
       .from('pastes')
       .update({ views_count: data.views_count + 1 })
@@ -71,7 +71,7 @@ export async function GET(
       throw updateError;
     }
 
-    // Calculate remaining views
+    // Calculate remaining views AFTER incrementing
     let remaining_views = null;
     if (data.max_views !== null) {
       remaining_views = Math.max(0, data.max_views - (data.views_count + 1));
